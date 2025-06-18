@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Link Sharing Bio App</title>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<style>
+  /* Reset and basic */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background: #f5f7fa;
+    color: #222;
+    line-height: 1.5;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #eef2f7;
+    color: #1f2937;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  button {
+    font-family: inherit;
+  }
+  /* Layout containers */
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: #6366f1;
+    color: white;
+    padding: 16px 24px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.5rem;
+    user-select: none;
+    letter-spacing: 0.05em;
+  }
+  main {
+    flex: 1 0 auto;
+    padding: 16px;
+  }
+  footer {
+    text-align: center;
+    padding: 12px 16px;
+    color: #9ca3af;
+    font-size: 0.85rem;
+  }
+  /* Form styles */
+  form {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow:
+      0 4px 6px rgba(99, 102, 241, 0.15),
+      0 1px 3px rgba(99, 102, 241, 0.1);
+    margin-bottom: 24px;
+  }
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  input[type=text], input[type=password], input[type=url], select {
+    width: 100%;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+  }
+  input[type=text]:focus, input[type=password]:focus, input[type=url]:focus, select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.3);
+  }
+  button.primary {
+    background-color: #6366f1;
+    color: white;
+    border: none;
+    padding: 14px 20px;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.3s ease;
+  }
+  button.primary:hover {
+    background-color: #4f46e5;
+  }
+  button.secondary {
+    background-color: transparent;
+    border: none;
+    color: #6366f1;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0;
+    text-decoration: underline;
+  }
+  button:disabled {
+    background-color: #a5b4fc;
+    cursor: not-allowed;
+  }
+  /* Link list styles (Bio) */
+  .bio-card {
+    text-align: center;
+    margin-top: 24px;
+  }
+  .profile-pic {
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    background: #6366f1;
+    color: white;
+    font-size: 48px;
+    line-height: 96px;
+    user-select: none;
+  }
+  .profile-username {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+  .link-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .link-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow:
+      0 2px 5px rgba(0, 0, 0, 0.07);
+    font-weight: 600;
+    font-size: 1rem;
+    color: #374151;
+    transition: box-shadow 0.3s ease;
+  }
+  .link-item:hover, .link-item:focus-within {
+    box-shadow:
+      0 6px 14px rgba(99, 102, 241, 0.3);
+  }
+  .link-icon {
+    font-family: 'Material Icons';
+    font-size: 24px;
+    margin-right: 16px;
+    flex-shrink: 0;
+    color: #6366f1;
+  }
+  /* Controls for logged in user */
+  .controls {
+    margin-top: 12px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+  }
+  /* Add/Edit Link Form */
+  .link-form {
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: inset 0 0 10px #e2e8f0;
+  }
+  .link-form-row {
+    margin-bottom: 12px;
+  }
+  .link-form-row label {
+    font-size: 0.9rem;
+    color: #4b5563;
+  }
+  /* Search users */
+  #search-user {
+    margin-bottom: 24px;
+  }
+  /* User list (search results) */
+  .user-list {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .user-list-item {
+    cursor: pointer;
+    padding: 10px 14px;
+    border-radius: 10px;
+    transition: background-color 0.2s ease;
+    font-weight: 600;
+    color: #4f46e5;
+  }
+  .user-list-item:hover, .user-list-item:focus {
+    background: #e0e7ff;
+    outline: none;
+  }
+  /* Responsive: mobile */
+  @media screen and (max-width: 480px) {
+    #app {
+      padding: 0 12px;
+    }
+    .link-item {
+      padding: 10px 14px;
+      font-size: 0.95rem;
+    }
+    .profile-username {
+      font-size: 1.5rem;
+    }
+  }
+  /* Typography helpers */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    border: 0;
+  }
+</style>
+</head>
+<body>
+<div id="app" role="main" aria-live="polite">
+  <header id="app-header">Link Sharing Bio</header>
+  <main id="main-content" tabindex="-1">
+    <!-- Login form -->
+    <section id="login-section">
+      <form id="login-form" aria-label="Login or create account form">
+        <h2 style="text-align:center; margin-bottom:24px;">Login or Create Account</h2>
+        <label for="login-username" id="label-login-username">Tên đăng nhập</label>
+        <input type="text" id="login-username" name="login-username" 
+          autocomplete="username" required aria-labelledby="label-login-username" />
+        <label for="login-password" id="label-login-password">Mật khẩu</label>
+        <input type="password" id="login-password" name="login-password" autocomplete="current-password" required aria-labelledby="label-login-password" />
+        <button type="submit" class="primary" id="login-submit" aria-live="polite">Đăng nhập / đăng ký</button>
+      </form>
+    </section>
+
+    <!-- Logged-in user dashboard -->
+    <section id="dashboard" hidden>
+      <div class="bio-card" aria-label="User profile information and shared links">
+        <div class="profile-pic" aria-hidden="true"></div>
+        <div class="profile-username" tabindex="0"></div>
+        <div class="link-list" role="list" tabindex="0" aria-label="User shared links"></div>
+        <div class="controls">
+          <button id="btn-add-link" class="primary">Thêm đường link mới</button>
+          <button id="btn-logout" class="secondary">Đăng xuất</button>
+        </div>
+      </div>
+
+      <!-- Add/Edit Link form -->
+      <form id="link-form" class="link-form" aria-label="Add or edit shared link" hidden>
+        <div class="link-form-row">
+          <label for="link-label">Tên đường link</label>
+          <input type="text" id="link-label" required aria-required="true" autocomplete="off" />
+        </div>
+        <div class="link-form-row">
+          <label for="link-url">URL</label>
+          <input type="url" id="link-url" placeholder="https://example.com" required aria-required="true" autocomplete="off" />
+        </div>
+        <div class="link-form-row">
+          <label for="link-icon">Biểu tượng</label>
+          <select id="link-icon" aria-describedby="link-icon-help" >
+            <option value="link">Link</option>
+            <option value="facebook">Facebook</option>
+            <option value="instagram">Instagram</option>
+            <option value="twitter">Twitter</option>
+            <option value="youtube">YouTube</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="email">Email</option>
+            <option value="github">GitHub</option>
+            <option value="work">Work</option>
+            <option value="phone">Phone</option>
+          </select>
+          <div id="link-icon-help" style="font-size: 0.85rem; color: #6b7280; margin-top: 2px;">
+            Chọn biểu tượng để nhận biết đường link.
+          </div>
+        </div>
+        <div style="display: flex; gap: 12px; margin-top:16px;">
+          <button type="submit" class="primary" id="save-link-btn">Lưu</button>
+          <button type="button" id="cancel-link-btn" class="secondary">Hủy</button>
+        </div>
+      </form>
+
+      <!-- Search other users -->
+      <section id="search-section" aria-label="Tìm kiếm tài khoản khác">
+        <h3>Tìm kiếm tài khoản người dùng</h3>
+        <input type="text" id="search-user" placeholder="Nhập tên đăng nhập" aria-describedby="search-user-desc" autocomplete="off" />
+        <div id="search-user-desc" class="sr-only">Nhập tên tài khoản bạn muốn tìm kiếm để xem trang link của họ</div>
+        <div class="user-list" id="user-list" role="list" tabindex="0" aria-label="Danh sách tài khoản tìm kiếm"></div>
+      </section>
+
+      <!-- Public view selected user -->
+      <section id="public-view" hidden aria-label="Xem trang link của người dùng khác">
+        <button id="public-view-back" class="secondary" style="margin-bottom: 16px;">&larr; Quay lại</button>
+        <div class="bio-card" id="public-bio-card" tabindex="0">
+          <div class="profile-pic" aria-hidden="true"></div>
+          <div class="profile-username" tabindex="0"></div>
+          <div class="link-list" role="list" tabindex="0" aria-label="Các đường link được chia sẻ"></div>
+        </div>
+      </section>
+
+    </section>
+  </main>
+  <footer>
+    &copy; 2024 Link Sharing Bio App - Your sharing, your way.
+  </footer>
+</div>
+
+<script>
+  (() => {
+    // Shortcuts for dom
+    const get = id => document.getElementById(id);
+
+    // Material Icons mapping for select values
+    const iconMap = {
+      link: 'link',
+      facebook: 'facebook',
+      instagram: 'instagram',
+      twitter: 'twitter',
+      youtube: 'youtube',
+      whatsapp: 'whatsapp',
+      email: 'email',
+      github: 'code',
+      work: 'work',
+      phone: 'phone',
+    };
+
+    // Helper sanitize and hash password simple (not cryptographically secure)
+    function simpleHash(str) {
+      let hash = 0;
+      for(let i=0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0; // Convert to 32bit int
+      }
+      return hash.toString();
+    }
+
+    // LocalStorage keys
+    const USERS_KEY = 'link_share_users'; // Array of {username, passwordHash, links:[{id, label, url, icon}]}
+    let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+
+    // Current logged in user
+    let currentUser = null;
+
+    // Reference to DOM elements
+    const loginSection = get('login-section');
+    const dashboard = get('dashboard');
+    const loginForm = get('login-form');
+    const profilePic = dashboard.querySelector('.profile-pic');
+    const profileUsername = dashboard.querySelector('.profile-username');
+    const linkList = dashboard.querySelector('.link-list');
+    const btnAddLink = get('btn-add-link');
+    const btnLogout = get('btn-logout');
+    const linkForm = get('link-form');
+    const linkLabelInput = get('link-label');
+    const linkURLInput = get('link-url');
+    const linkIconSelect = get('link-icon');
+    const saveLinkBtn = get('save-link-btn');
+    const cancelLinkBtn = get('cancel-link-btn');
+    const searchInput = get('search-user');
+    const userListContainer = get('user-list');
+    const publicView = get('public-view');
+    const publicViewBack = get('public-view-back');
+    const publicBioCard = get('public-bio-card');
+
+    let editingLinkId = null; // null means add new
+
+    // Save users to storage
+    function saveUsers() {
+      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    }
+
+    // Create avatar text from username first letter upper
+    function avatarText(name) {
+      return name.charAt(0).toUpperCase();
+    }
+
+    // Render logged in user profile and links
+    function renderDashboard() {
+      if (!currentUser) return;
+      profilePic.textContent = avatarText(currentUser.username);
+      profileUsername.textContent = currentUser.username;
+      renderLinks(currentUser.links);
+    }
+
+    // Render link list given array of links and container
+    function renderLinks(linksArray, container = linkList) {
+      container.innerHTML = ''; 
+      if (!linksArray.length) {
+        container.innerHTML = '<p style="color:#6b7280; font-style: italic;">Chưa có đường link nào. Hãy thêm đường link đầu tiên.</p>';
+        return;
+      }
+      linksArray.forEach(link => {
+        const a = document.createElement('a');
+        a.href = link.url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.className = 'link-item';
+        a.setAttribute('role', 'listitem');
+        a.tabIndex = 0;
+        a.setAttribute('aria-label', `${link.label}, mở liên kết mới`);
+        // Icon
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'link-icon material-icons';
+        iconSpan.textContent = iconMap[link.icon] || 'link';
+        a.appendChild(iconSpan);
+        // Label text
+        const textSpan = document.createElement('span');
+        textSpan.textContent = link.label;
+        a.appendChild(textSpan);
+        // If current user, add edit on click
+        if(currentUser && container === linkList) {
+          a.style.position = 'relative';
+          a.tabIndex = -1; // Remove natural focus from links, use keyboard from controls
+          a.addEventListener('click', e => {
+            e.preventDefault();
+            openEditLink(link.id);
+          });
+          a.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openEditLink(link.id);
+            }
+          });
+        }
+        container.appendChild(a);
+      });
+    }
+
+    // Open add link form
+    function openAddLink() {
+      editingLinkId = null;
+      linkForm.hidden = false;
+      linkLabelInput.value = '';
+      linkURLInput.value = '';
+      linkIconSelect.value = 'link';
+      linkLabelInput.focus();
+      btnAddLink.disabled = true;
+    }
+
+    // Open edit link form
+    function openEditLink(id) {
+      const link = currentUser.links.find(l => l.id === id);
+      if (!link) return;
+      editingLinkId = id;
+      linkForm.hidden = false;
+      linkLabelInput.value = link.label;
+      linkURLInput.value = link.url;
+      linkIconSelect.value = link.icon;
+      linkLabelInput.focus();
+      btnAddLink.disabled = true;
+    }
+
+    // Close link form
+    function closeLinkForm() {
+      linkForm.hidden = true;
+      btnAddLink.disabled = false;
+    }
+
+    // Validate link input fields
+    function validateLinkInputs() {
+      const label = linkLabelInput.value.trim();
+      const url = linkURLInput.value.trim();
+      if (!label || !url) {
+        saveLinkBtn.disabled = true;
+        return false;
+      }
+      // URL validation
+      try {
+        new URL(url);
+      } catch {
+        saveLinkBtn.disabled = true;
+        return false;
+      }
+      saveLinkBtn.disabled = false;
+      return true;
+    }
+
+    // Add or update link
+    function saveLink(e) {
+      e.preventDefault();
+      const label = linkLabelInput.value.trim();
+      let url = linkURLInput.value.trim();
+      const icon = linkIconSelect.value;
+
+      if (!label || !url) return;
+
+      // Add http if missing for convenience
+      if (!url.match(/^https?:\/\//)) {
+        url = 'https://' + url;
+      }
+
+      if (editingLinkId) {
+        // Edit mode
+        const linkIndex = currentUser.links.findIndex(l => l.id === editingLinkId);
+        if (linkIndex !== -1) {
+          currentUser.links[linkIndex].label = label;
+          currentUser.links[linkIndex].url = url;
+          currentUser.links[linkIndex].icon = icon;
+        }
+      } else {
+        // Create new
+        currentUser.links.push({
+          id: crypto.randomUUID(),
+          label,
+          url,
+          icon,
+        });
+      }
+      saveUsers();
+      renderDashboard();
+      closeLinkForm();
+    }
+
+    // Login or create account
+    function login(e) {
+      e.preventDefault();
+      const username = loginForm['login-username'].value.trim();
+      const password = loginForm['login-password'].value;
+      if (!username || !password) return;
+
+      const passwordHash = simpleHash(password);
+
+      let user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+
+      if (user) {
+        // Verify password
+        if (user.passwordHash !== passwordHash) {
+          alert('Mật khẩu không đúng. Vui lòng thử lại.');
+          return;
+        }
+      } else {
+        // Create new user
+        user = {
+          username,
+          passwordHash,
+          links: [],
+        };
+        users.push(user);
+        saveUsers();
+        alert('Tài khoản được tạo thành công.');
+      }
+      currentUser = user;
+      loginForm.reset();
+      switchToDashboard();
+    }
+
+    // Switch UI to dashboard view
+    function switchToDashboard() {
+      loginSection.hidden = true;
+      dashboard.hidden = false;
+      publicView.hidden = true;
+      renderDashboard();
+      searchInput.value = '';
+      userListContainer.innerHTML = '';
+      searchInput.focus();
+    }
+
+    // Logout
+    function logout() {
+      currentUser = null;
+      loginSection.hidden = false;
+      dashboard.hidden = true;
+      publicView.hidden = true;
+      linkForm.hidden = true;
+      btnAddLink.disabled = false;
+      loginForm['login-username'].focus();
+    }
+
+    // Search users by username substring
+    function searchUsers() {
+      const query = searchInput.value.trim().toLowerCase();
+      userListContainer.innerHTML = '';
+      if (!query) {
+        return;
+      }
+      const matchedUsers = users.filter(u => u.username.toLowerCase().includes(query) && u.username !== currentUser?.username);
+      if (!matchedUsers.length) {
+        userListContainer.innerHTML = '<p style="color:#6b7280;font-style:italic;">Không tìm thấy tài khoản nào.</p>';
+        return;
+      }
+      matchedUsers.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'user-list-item';
+        div.textContent = u.username;
+        div.tabIndex = 0;
+        div.setAttribute('role', 'listitem');
+        div.addEventListener('click', () => openPublicView(u.username));
+        div.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openPublicView(u.username);
+          }
+        });
+        userListContainer.appendChild(div);
+      });
+    }
+
+    // Show public view for a username's link page
+    function openPublicView(username) {
+      const user = users.find(u => u.username === username);
+      if (!user) return;
+      loginSection.hidden = true;
+      dashboard.hidden = true;
+      publicView.hidden = false;
+      // Fill public view bio card
+      const pic = publicBioCard.querySelector('.profile-pic');
+      const nameEl = publicBioCard.querySelector('.profile-username');
+      const linksContainer = publicBioCard.querySelector('.link-list');
+      pic.textContent = avatarText(user.username);
+      nameEl.textContent = user.username;
+      renderLinks(user.links, linksContainer);
+      publicViewBack.focus();
+    }
+
+    // Back from public view to dashboard
+    function backToDashboard() {
+      publicView.hidden = true;
+      dashboard.hidden = false;
+      searchInput.focus();
+    }
+
+    // Keyboard accessibility: close link form on Escape
+    function onDocKeydown(e) {
+      if (e.key === 'Escape' && !linkForm.hidden) {
+        e.preventDefault();
+        closeLinkForm();
+      }
+    }
+
+    // Event Listeners
+    loginForm.addEventListener('submit', login);
+    btnLogout.addEventListener('click', logout);
+    btnAddLink.addEventListener('click', openAddLink);
+    cancelLinkBtn.addEventListener('click', e => {
+      e.preventDefault();
+      closeLinkForm();
+    });
+    linkForm.addEventListener('submit', saveLink);
+    linkLabelInput.addEventListener('input', validateLinkInputs);
+    linkURLInput.addEventListener('input', validateLinkInputs);
+    searchInput.addEventListener('input', searchUsers);
+    publicViewBack.addEventListener('click', backToDashboard);
+    document.addEventListener('keydown', onDocKeydown);
+
+    // Initialization
+    loginForm['login-username'].focus();
+    validateLinkInputs();
+  })();
+</script>
+</body>
+</html>
+
