@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Personal File Storage & Sharing</title>
+  <link href="https://fonts.googleapis.com/css?family=Inter:400,600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <style>
+    /* Reset and base styles */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    html {
+      font-family: 'Inter', sans-serif;
+      background-color: #f0f2f5;
+      color: #222;
+      font-size: 16px;
+      height: 100%;
+      margin: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    body, #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    :root {
+      --primary-color: #1877f2;
+      --glass-bg: rgba(255 255 255 / 0.25);
+      --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+      --glass-border: 1px solid rgba(255 255 255 / 0.18);
+      --header-height: 64px;
+      --sidebar-width: 280px;
+      --footer-height: 48px;
+      --text-secondary: #65676b;
+      --background: #f0f2f5;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #ddd;
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #aaa;
+      border-radius: 8px;
+    }
+
+    /* Utility */
+    .hidden {
+      display: none !important;
+    }
+    button {
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+    }
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 3px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+
+    a {
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+    a:hover,
+    a:focus-visible {
+      text-decoration: underline;
+      outline: none;
+    }
+
+    /* Login Screen */
+    #login-screen {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #0a3d62 0%, #1e3799 100%);
+      flex: 1;
+      padding: 1rem;
+    }
+    #login-form {
+      background: var(--glass-bg);
+      backdrop-filter: blur(15px);
+      padding: 3rem 2rem;
+      border-radius: 16px;
+      box-shadow: var(--glass-shadow);
+      border: var(--glass-border);
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    #login-form h1 {
+      color: white;
+      margin: 0 0 1rem;
+      font-weight: 800;
+      font-size: clamp(1.75rem, 5vw, 2.25rem);
+      user-select: none;
+      text-align: center;
+    }
+    #login-form label {
+      color: white;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    #login-form input[type="text"],
+    #login-form input[type="password"] {
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border-radius: 12px;
+      border: none;
+      outline-offset: 2px;
+    }
+    #login-form button {
+      background: white;
+      color: var(--primary-color);
+      border: none;
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      font-weight: 700;
+      transition: background-color 0.3s ease;
+    }
+    #login-form button:hover,
+    #login-form button:focus-visible {
+      background-color: #dde5ff;
+      outline: none;
+    }
+    #login-error {
+      color: #ff6b6b;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-align: center;
+      min-height: 1.2rem;
+      user-select: none;
+    }
+
+    /* App Layout */
+    #app {
+      flex: 1;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--background);
+    }
+    header.app-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-height);
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      box-shadow: var(--glass-shadow);
+      border-bottom: var(--glass-border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      z-index: 100;
+      user-select: none;
+    }
+    header .logo {
+      font-weight: 800;
+      font-size: clamp(1.5rem, 2vw, 2rem);
+      color: var(--primary-color);
+    }
+    header .user-section {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+    header .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: var(--primary-color);
+      color: white;
+      font-weight: 700;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    header .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    header button#logout-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 24px;
+      transition: color 0.3s ease;
+    }
+    header button#logout-btn:hover,
+    header button#logout-btn:focus-visible {
+      color: var(--primary-color);
+      outline: none;
+    }
+
+    nav.sidebar {
+      flex-shrink: 0;
+      width: var(--sidebar-width);
+      margin-top: var(--header-height);
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      box-shadow: var(--glass-shadow);
+      padding: 1rem 1.5rem;
+      border-right: var(--glass-border);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    nav.sidebar h2 {
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--primary-color);
+      margin: 0 0 0.5rem;
+      user-select: none;
+    }
+    nav.sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    nav.sidebar ul li {
+      cursor: pointer;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      user-select: none;
+      transition: background-color 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    nav.sidebar ul li.active,
+    nav.sidebar ul li:hover,
+    nav.sidebar ul li:focus-visible {
+      background-color: rgba(24,119,242,0.12);
+      color: var(--primary-color);
+      outline: none;
+    }
+    nav.sidebar ul li .material-icons {
+      font-size: 24px;
+    }
+    nav.sidebar ul li .badge {
+      background-color: var(--primary-color);
+      color: white;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 10px;
+      margin-left: auto;
+    }
+
+    main.content-area {
+      flex: 1 1 auto;
+      margin-top: var(--header-height);
+      padding: 20px 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #file-list {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      margin-bottom: 16px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      background: white;
+      box-shadow: inset 0 0 8px rgb(0 0 0 / 0.07);
+      padding: 1rem;
+    }
+    #file-list ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #file-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid #eee;
+      font-size: 0.95rem;
+    }
+    #file-list li:last-child {
+      border-bottom: none;
+    }
+    #file-list li .filename {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      max-width: 50vw;
+    }
+    #file-list li button {
+      background: transparent;
+      border: none;
+      color: var(--primary-color);
+      cursor: pointer;
+      font-size: 20px;
+      user-select: none;
+    }
+    #file-list li button:hover,
+    #file-list li button:focus-visible {
+      color: #0d47a1;
+      outline: none;
+    }
+
+    #file-upload-section {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    #file-upload-section label {
+      cursor: pointer;
+      padding: 10px 16px;
+      background: var(--primary-color);
+      color: white;
+      border-radius: 12px;
+      font-weight: 600;
+      user-select: none;
+      transition: background-color 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    #file-upload-section label:hover,
+    #file-upload-section label:focus-visible {
+      background-color: #0d47a1;
+      outline: none;
+    }
+    #file-upload-section input[type="file"] {
+      display: none;
+    }
+    #file-share-to-user {
+      flex-grow: 1;
+      padding: 8px 12px;
+      font-size: 1rem;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+    #share-file-btn {
+      padding: 10px 18px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #share-file-btn:disabled {
+      background-color: #a0a0a0;
+      cursor: not-allowed;
+    }
+    #share-file-btn:hover:not(:disabled),
+    #share-file-btn:focus-visible:not(:disabled) {
+      background-color: #0d47a1;
+      outline: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 767px) {
+      nav.sidebar {
+        position: fixed;
+        top: var(--header-height);
+        bottom: 0;
+        left: 0;
+        width: var(--sidebar-width);
+        z-index: 100;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+      nav.sidebar.open {
+        transform: translateX(0);
+      }
+      main.content-area {
+        margin: var(--header-height) 0 0 0;
+        padding: 1rem;
+      }
+    }
+    @media (min-width: 768px) {
+      nav.sidebar {
+        transform: translateX(0) !important;
+        position: relative;
+        overflow-y: auto;
+      }
+      main.content-area {
+        margin-left: var(--sidebar-width);
+        margin-top: var(--header-height);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <section id="login-screen" aria-label="Login Screen">
+    <form id="login-form" novalidate>
+      <h1>Login</h1>
+      <label for="login-username">Username</label>
+      <input type="text" id="login-username" name="username" minlength="2" maxlength="32" required />
+      <label for="login-password">Password</label>
+      <input type="password" id="login-password" name="password" minlength="4" required />
+      <div id="login-error" role="alert" aria-live="assertive" class="hidden"></div>
+      <button type="submit" aria-label="Login">Login / Register</button>
+    </form>
+  </section>
+
+  <!-- App Main -->
+  <div id="app" class="hidden" role="main" aria-label="Personal file storage and sharing app">
+    <header class="app-header">
+      <div class="logo">FileShareApp</div>
+      <div class="user-section">
+        <div id="user-avatar" class="user-avatar" title="Click to open profile"></div>
+        <div id="user-name" style="font-weight:600;"></div>
+        <button id="logout-btn" title="Logout">
+          <span class="material-icons" aria-hidden="true">logout</span>
+          <span class="sr-only">Logout</span>
+        </button>
+      </div>
+    </header>
+    <nav class="sidebar" aria-label="Navigation">
+      <h2>Navigation</h2>
+      <ul>
+        <li id="nav-myfiles" tabindex="0" role="button" aria-pressed="true" class="active"><span class="material-icons">folder</span>My Files</li>
+        <li id="nav-sharedfiles" tabindex="0" role="button" aria-pressed="false"><span class="material-icons">share</span>Shared With Me</li>
+      </ul>
+    </nav>
+    <main class="content-area" tabindex="0">
+      <!-- File Upload Section -->
+      <section id="upload-section">
+        <label for="file-upload-input" id="file-upload-label" tabindex="0">Choose files to upload</label>
+        <input type="file" id="file-upload-input" multiple aria-labelledby="file-upload-label" />
+        <button id="upload-btn" disabled>Upload</button>
+        <label for="share-recipient" style="margin-left:16px;">Share to (username):</label>
+        <input id="share-recipient" type="text" placeholder="Optional: username to share" aria-label="Username to share files to" />
+      </section>
+
+      <!-- File List Section -->
+      <section id="file-list-section" aria-live="polite" aria-label="File list">
+        <h2>Files</h2>
+        <ul id="file-list"></ul>
+      </section>
+    </main>
+
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="profile-title" tabindex="-1">
+      <div style="background:white; padding:20px; max-width:400px; margin:40px auto; border-radius:16px; position:relative;">
+        <h2 id="profile-title">Edit Profile</h2>
+        <button id="profile-close" aria-label="Close profile dialog" style="position:absolute; right:10px; top:8px; background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+        <form id="profile-form" novalidate>
+          <label for="profile-name">Username</label>
+          <input id="profile-name" type="text" minlength="2" maxlength="32" required />
+          <label for="profile-avatar-input">Avatar (optional)</label>
+          <input type="file" id="profile-avatar-input" accept="image/*" />
+          <img id="profile-avatar-preview" alt="Avatar preview" style="width:80px;height:80px;display:none;border-radius:50%; margin:15px 0;" / src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/9478f5ab-d6f1-4977-af36-c8a9473167fc.png">
+          <label for="profile-oldpass">Current Password (required to change password)</label>
+          <input id="profile-oldpass" type="password" minlength="4" />
+          <label for="profile-newpass">New Password</label>
+          <input id="profile-newpass" type="password" minlength="4" />
+          <button id="profile-save-btn" disabled>Save Changes</button>
+          <div id="profile-error" role="alert" style="color:#b00020; font-weight:600; margin-top:10px;"></div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        // Elements
+        const loginScreen = document.getElementById('login-screen');
+        const app = document.getElementById('app');
+
+        const loginForm = document.getElementById('login-form');
+        const loginUsername = document.getElementById('login-username');
+        const loginPassword = document.getElementById('login-password');
+        const loginError = document.getElementById('login-error');
+
+        const userNameDisplay = document.getElementById('user-name');
+        const userAvatarDisplay = document.getElementById('user-avatar');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        const navMyFiles = document.getElementById('nav-myfiles');
+        const navSharedFiles = document.getElementById('nav-sharedfiles');
+        const fileUploadInput = document.getElementById('file-upload-input');
+        const uploadBtn = document.getElementById('upload-btn');
+        const shareRecipient = document.getElementById('share-recipient');
+        const fileList = document.getElementById('file-list');
+
+        const profileModal = document.getElementById('profile-modal');
+        const profileClose = document.getElementById('profile-close');
+        const profileForm = document.getElementById('profile-form');
+        const profileName = document.getElementById('profile-name');
+        const profileAvatarInput = document.getElementById('profile-avatar-input');
+        const profileAvatarPreview = document.getElementById('profile-avatar-preview');
+        const profileOldPass = document.getElementById('profile-oldpass');
+        const profileNewPass = document.getElementById('profile-newpass');
+        const profileSaveBtn = document.getElementById('profile-save-btn');
+        const profileError = document.getElementById('profile-error');
+
+        // Globals and Storage keys:
+        const LS_USERS = 'pfs_users';
+        const LS_FILES = 'pfs_files';
+        const LS_CURRENT = 'pfs_currentuser';
+
+        let users = JSON.parse(localStorage.getItem(LS_USERS) || '[]');
+        let files = JSON.parse(localStorage.getItem(LS_FILES) || '[]');
+        let currentUser = JSON.parse(localStorage.getItem(LS_CURRENT));
+        let currentView = 'myfiles'; // or 'sharedfiles'
+
+        /* =========== UTILITIES =========== */
+
+        function saveUsers() {
+          localStorage.setItem(LS_USERS, JSON.stringify(users));
+        }
+
+        function saveFiles() {
+          localStorage.setItem(LS_FILES, JSON.stringify(files));
+        }
+
+        function saveCurrentUser() {
+          localStorage.setItem(LS_CURRENT, JSON.stringify(currentUser));
+        }
+
+        function simpleHash(str) {
+          let hash = 0;
+          for (let i = 0; i < str.length; i++) {
+            hash = (hash << 5) - hash + str.charCodeAt(i);
+            hash |= 0;
+          }
+          return hash.toString();
+        }
+
+        function generateAvatarInitials(name) {
+          return name.trim().split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase();
+        }
+
+        function createAvatarElem(user) {
+          const span = document.createElement('span');
+          span.className = 'user-avatar';
+          span.style.width = '36px';
+          span.style.height = '36px';
+          span.style.borderRadius = '50%';
+          span.style.backgroundColor = '#1877f2';
+          span.style.color = 'white';
+          span.style.fontWeight = '700';
+          span.style.fontSize = '16px';
+          span.style.display = 'flex';
+          span.style.justifyContent = 'center';
+          span.style.alignItems = 'center';
+          span.style.userSelect = 'none';
+          span.style.overflow = 'hidden';
+          if (user.avatar) {
+            const img = document.createElement('img');
+            img.src = user.avatar;
+            img.alt = 'User avatar';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            span.appendChild(img);
+          } else {
+            span.textContent = generateAvatarInitials(user.username);
+          }
+          return span;
+        }
+
+        /* =========== LOGIN & REGISTER =========== */
+
+        loginForm.addEventListener('submit', e => {
+          e.preventDefault();
+          loginError.textContent = '';
+          const username = loginUsername.value.trim();
+          const password = loginPassword.value;
+
+          if (!username || username.length < 2 || username.length > 32) {
+            loginError.textContent = 'Username must be 2-32 characters.';
+            return;
+          }
+          if (!password || password.length < 4) {
+            loginError.textContent = 'Password must be at least 4 characters.';
+            return;
+          }
+
+          let foundUser = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+          if (foundUser) {
+            if (foundUser.password !== simpleHash(password)) {
+              loginError.textContent = 'Incorrect password.';
+              return;
+            }
+            currentUser = foundUser;
+          } else {
+            currentUser = {
+              username: username,
+              password: simpleHash(password),
+              avatar: null,
+              createdAt: Date.now()
+            };
+            users.push(currentUser);
+            saveUsers();
+          }
+          saveCurrentUser();
+          loginScreen.classList.add('hidden');
+          app.classList.remove('hidden');
+          refreshAppUI();
+        });
+
+        logoutBtn.addEventListener('click', () => {
+          currentUser = null;
+          localStorage.removeItem(LS_CURRENT);
+          loginScreen.classList.remove('hidden');
+          app.classList.add('hidden');
+          loginUsername.value = '';
+          loginPassword.value = '';
+          fileList.innerHTML = '';
+          uploadBtn.disabled = true;
+          shareRecipient.value = '';
+          loginUsername.focus();
+        });
+
+        /* =========== APP UI MAIN =========== */
+
+        const app = document.getElementById('app');
+
+        function refreshAppUI() {
+          userNameDisplay.textContent = currentUser.username;
+          userAvatarDisplay.innerHTML = '';
+          userAvatarDisplay.appendChild(createAvatarElem(currentUser));
+          displayFiles();
+          uploadBtn.disabled = true;
+        }
+
+        function displayFiles() {
+          fileList.innerHTML = '';
+          let showingFiles = [];
+          if (currentView === 'myfiles') {
+            showingFiles = files.filter(f => f.owner === currentUser.username);
+          } else if (currentView === 'sharedfiles') {
+            showingFiles = files.filter(f => f.sharedWith?.includes(currentUser.username));
+          }
+
+          if(showingFiles.length === 0) {
+            const li = document.createElement('li');
+            li.textContent = 'No files available';
+            fileList.appendChild(li);
+            return;
+          }
+
+          showingFiles.forEach(f => {
+            const li = document.createElement('li');
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = f.filename;
+            nameSpan.classList.add('filename');
+
+            // download link
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.href = f.data;
+            downloadAnchor.download = f.filename;
+            downloadAnchor.textContent = 'Download';
+            downloadAnchor.style.marginRight = '10px';
+            downloadAnchor.style.textDecoration = 'none';
+            downloadAnchor.style.color = 'var(--primary-color)';
+
+            // delete button if owner
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'delete';
+            deleteBtn.title = 'Delete this file';
+            deleteBtn.setAttribute('aria-label', `Delete ${f.filename}`);
+            deleteBtn.style.background = 'transparent';
+            deleteBtn.style.border = 'none';
+            deleteBtn.style.color = 'var(--primary-color)';
+            deleteBtn.style.cursor = 'pointer';
+            deleteBtn.addEventListener('click', () => {
+              if (confirm(`Delete file "${f.filename}"? This cannot be undone.`)) {
+                deleteFile(f.id);
+              }
+            });
+
+            // share input and button if owner
+            let shareBox = null;
+            if (f.owner === currentUser.username) {
+              shareBox = document.createElement('div');
+              shareBox.style.display = 'inline-flex';
+              shareBox.style.alignItems = 'center';
+              shareBox.style.gap = '0.5rem';
+
+              const shareInput = document.createElement('input');
+              shareInput.type = 'text';
+              shareInput.placeholder = 'Username to share';
+              shareInput.style.fontSize = '0.9rem';
+              shareInput.autocomplete = 'off';
+
+              const shareBtn = document.createElement('button');
+              shareBtn.textContent = 'Share';
+              shareBtn.disabled = true;
+
+              shareInput.addEventListener('input', () => {
+                  shareBtn.disabled = !shareInput.value.trim();
+              });
+
+              shareBtn.addEventListener('click', () => {
+                const targetUser = shareInput.value.trim();
+                if(!targetUser) return;
+
+                const userExists = users.some(u => u.username.toLowerCase() === targetUser.toLowerCase());
+                if (!userExists) {
+                  alert(`User "${targetUser}" does not exist.`);
+                  return;
+                }
+                if (targetUser.toLowerCase() === currentUser.username.toLowerCase()) {
+                  alert(`You already own this file.`);
+                  return;
+                }
+                shareFileWithUser(f.id, targetUser);
+                shareInput.value = '';
+                shareBtn.disabled = true;
+              });
+
+              shareBox.appendChild(shareInput);
+              shareBox.appendChild(shareBtn);
+            }
+
+            li.appendChild(nameSpan);
+            li.appendChild(downloadAnchor);
+            if(shareBox) li.appendChild(shareBox);
+            li.appendChild(deleteBtn);
+            fileList.appendChild(li);
+          });
+        }
+
+        function deleteFile(id) {
+          const idx = files.findIndex(f => f.id === id && f.owner === currentUser.username);
+          if(idx !== -1) {
+            files.splice(idx, 1);
+            saveFiles();
+            displayFiles();
+          }
+        }
+
+        function shareFileWithUser(fileId, username) {
+          const file = files.find(f => f.id === fileId);
+          if(!file) return;
+          if(!file.sharedWith) file.sharedWith = [];
+          if(file.sharedWith.includes(username)) {
+            alert(`File already shared with ${username}.`);
+            return;
+          }
+          file.sharedWith.push(username);
+          saveFiles();
+          alert(`Shared file with ${username}.`);
+        }
+
+        // Upload functionality
+        fileUploadInput.addEventListener('change', () => {
+          uploadBtn.disabled = fileUploadInput.files.length === 0;
+        });
+
+        uploadBtn.addEventListener('click', async () => {
+          if(!fileUploadInput.files.length) return;
+          for(const file of fileUploadInput.files) {
+            if(file.size > 2 * 1024 * 1024) {
+              alert(`File "${file.name}" exceeds 2MB limit and was not uploaded.`);
+              continue;
+            }
+            const data = await fileToBase64(file);
+            const newFile = {
+              id: `file-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+              owner: currentUser.username,
+              filename: file.name,
+              data,
+              sharedWith: []
+            };
+            files.push(newFile);
+          }
+          saveFiles();
+          fileUploadInput.value = '';
+          uploadBtn.disabled = true;
+          if(currentView === 'myfiles') displayFiles();
+        });
+
+        // Convert file to base64 data URL
+        function fileToBase64(file) {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('File read error'));
+            reader.readAsDataURL(file);
+          });
+        }
+
+        // Navigation handlers
+        navMyFiles.addEventListener('click', () => {
+          currentView = 'myfiles';
+          navMyFiles.classList.add('active');
+          navMyFiles.setAttribute('aria-pressed', 'true');
+          navSharedFiles.classList.remove('active');
+          navSharedFiles.setAttribute('aria-pressed', 'false');
+          displayFiles();
+        });
+        navSharedFiles.addEventListener('click', () => {
+          currentView = 'sharedfiles';
+          navSharedFiles.classList.add('active');
+          navSharedFiles.setAttribute('aria-pressed', 'true');
+          navMyFiles.classList.remove('active');
+          navMyFiles.setAttribute('aria-pressed', 'false');
+          displayFiles();
+        });
+
+        // Initialize app UI on page load if user logged in
+        window.addEventListener('load', () => {
+          if(currentUser) {
+            loginScreen.classList.add('hidden');
+            app.classList.remove('hidden');
+            refreshAppUI();
+          } else {
+            loginScreen.classList.remove('hidden');
+            app.classList.add('hidden');
+            loginUsername.focus();
+          }
+        });
+
+      })();
+    </script>
+</body>
+</html>
+
